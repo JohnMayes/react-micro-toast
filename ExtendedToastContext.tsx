@@ -1,12 +1,22 @@
 "use client"
-import { createContext, useContext, useState, useCallback, useMemo, useEffect, ReactNode } from 'react';
+import { 
+  createContext, 
+  useContext, 
+  useState, 
+  useCallback, 
+  useMemo, 
+  useEffect, 
+  ReactNode, 
+  CSSProperties } from 'react';
 
 type ToastType = 'success' | 'error' | 'info' | 'warn';
 
 interface ToastOptions {
   duration?: number;
   position?: 'top-right' | 'top-left' | 'top-center' | 'bottom-right' | 'bottom-left' | 'bottom-center';
-  onDismiss?: (id: string) => void;
+  dismissible?: boolean;
+  onDismiss?: () => void;
+  style?: CSSProperties
 }
 
 interface ToastContextProps {
@@ -34,7 +44,7 @@ export const ToastProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const addToast = useCallback((message: string, type: ToastType, options: ToastOptions = {}) => {
-    const { duration = 5000, onDismiss } = options;
+    const { duration = 5000 } = options;
     const randomId = generateToastId();
     const removeTimer = setTimeout(() => {
       removeToast(randomId);
@@ -52,24 +62,27 @@ export const ToastProvider = ({ children }: { children: ReactNode }) => {
     error: (message: string, options?: ToastOptions) => addToast(message, 'error', options),
     info: (message: string, options?: ToastOptions) => addToast(message, 'info', options),
     warn: (message: string, options?: ToastOptions) => addToast(message, 'warn', options),
-  }), [addToast]);
+    removeToast
+  }), [addToast, removeToast]);
 
   return (
     <ToastContext.Provider value={contextValue}>
       {children}
   
       {/* Render multiple toast containers dynamically based on active positions */}
-      {['top-right', 'top-left', 'top-center', 'bottom-right', 'bottom-left', 'bottom-center'].map((position) => (
-        <div key={position} className={`toast-container ${position}`}>
-          {toasts
-            .filter((toast) => toast.options?.position === position)
-            .map((toast) => (
+      {['top-right', 'top-left', 'top-center', 'bottom-right', 'bottom-left', 'bottom-center'].map((toastPosition) => {
+        const filteredToasts = toasts.filter((toast) => (toast.options?.position || 'top-right') === toastPosition);
+
+        return (
+          <div key={toastPosition} className={`toast-container ${toastPosition}`}>
+            {filteredToasts.map((toast) => (
               <div key={toast.id} className="toast-wrapper">
-                <Toast {...toast} />
+                <Toast {...toast} removeToast={removeToast} />
               </div>
             ))}
-        </div>
-      ))}
+          </div>
+        );
+      })}
   
       <style jsx>{`
         .toast-container {
@@ -78,7 +91,6 @@ export const ToastProvider = ({ children }: { children: ReactNode }) => {
           flex-direction: column;
           pointer-events: none; /* Allows clicks to pass through */
           z-index: 99999;
-          background: red;
         }
   
         .toast-wrapper {
@@ -116,12 +128,21 @@ interface ToastProps {
   id: string,
   message: string;
   type: ToastType;
+  removeToast: (id: string) => void;
   options?: ToastOptions
 }
 
-const Toast = ({ message, type, id, options = {} }: ToastProps) => {
-  const { duration = 5000, position = 'top-right', onDismiss } = options;
+const Toast = ({ message, type, id, options = {}, removeToast }: ToastProps) => {
+  const { duration = 5000, position = 'top-right' } = options;
   const [isVisible, setIsVisible] = useState(false);
+
+  const handleDismiss = () => {
+    if (options.onDismiss) {
+      options.onDismiss()
+    }
+    setIsVisible(false);
+    removeToast(id);
+  }
 
   useEffect(() => {
     setIsVisible(true);
@@ -139,10 +160,11 @@ const Toast = ({ message, type, id, options = {} }: ToastProps) => {
     <>
       <div
         className={`toast ${type} ${position} ${isVisible ? 'visible' : ''}`}
+        style={options.style}
         role="alert"
       >
         {message}
-        {onDismiss && <button onClick={() => onDismiss(id)}>X</button>}
+        {options.dismissible && <button id='x-mark' onClick={handleDismiss}><XMark /></button>}
       </div>
 
       <style jsx>{`
@@ -193,7 +215,31 @@ const Toast = ({ message, type, id, options = {} }: ToastProps) => {
         .toast.error { background-color: var(--error-color); }
         .toast.info { background-color: var(--info-color); }
         .toast.warn { background-color: var(--warn-color); }
+
+        #x-mark {
+          width: 24px;
+          height: 24px;
+        }
       `}</style>
     </>
+  );
+};
+
+const XMark = () => {
+  return (
+    <svg
+      fill="none"
+      strokeWidth={2.5}
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M6 18 18 6M6 6l12 12"
+      />
+    </svg>
   );
 };
