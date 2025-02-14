@@ -1,6 +1,15 @@
-import { createContext, useContext, useState, useCallback, useMemo, useEffect, ReactNode, CSSProperties } from 'react';
+import { 
+  createContext, 
+  useContext, 
+  useState, 
+  useCallback, 
+  useMemo, 
+  useEffect, 
+  ReactNode, 
+  CSSProperties 
+} from 'react';
 
-type ToastType = 'success' | 'error' | 'info';
+type ToastType = 'success' | 'error' | 'info' | 'warn';
 
 interface ToastOptions {
   duration?: number;
@@ -10,13 +19,14 @@ interface ToastContextProps {
   success: (message: string, options?: ToastOptions) => void;
   error: (message: string, options?: ToastOptions) => void;
   info: (message: string, options?: ToastOptions) => void;
+  warn: (message: string, options?: ToastOptions) => void;
 }
 
 interface ToastState {
   id: string;
   message: string;
   type: ToastType;
-  duration?: number;
+  options?: ToastOptions;
 }
 
 const ToastContext = createContext<ToastContextProps | undefined>(undefined);
@@ -30,13 +40,13 @@ export const ToastProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const addToast = useCallback((message: string, type: ToastType, options: ToastOptions = {}) => {
-    const { duration } = options;
+    const { duration = 5000 } = options;
     const randomId = generateToastId();
     const removeTimer = setTimeout(() => {
       removeToast(randomId);
-    }, 5000);
+    }, duration);
 
-    setToasts((prevToasts) => [{ message, type, id: randomId, duration }, ...prevToasts]);
+    setToasts((prevToasts) => [{ id: randomId, message, type, options }, ...prevToasts]);
 
     return () => {
       clearTimeout(removeTimer);
@@ -44,20 +54,23 @@ export const ToastProvider = ({ children }: { children: ReactNode }) => {
   }, [removeToast]);
 
   const contextValue = useMemo(() => ({
-    success: (message: string) => addToast(message, 'success'),
-    error: (message: string) => addToast(message, 'error'),
-    info: (message: string) => addToast(message, 'info'),
+    success: (message: string, options?: ToastOptions) => addToast(message, 'success', options),
+    error: (message: string, options?: ToastOptions) => addToast(message, 'error', options),
+    info: (message: string, options?: ToastOptions) => addToast(message, 'info', options),
+    warn: (message: string, options?: ToastOptions) => addToast(message, 'warn', options),
   }), [addToast]);
 
+  // Just some basic styles to get you up and running. 
+  // You will probably want to place these in an external style sheet.
   const containerStyles: CSSProperties = {
     position: 'fixed',
     top: '1rem',
     right: '1rem',
-    zIndex: 999,
-    pointerEvents: 'none',
     display: 'flex',
     flexDirection: 'column',
-    gap: '1rem'
+    gap: '1rem',
+    zIndex: 999,
+    pointerEvents: 'none',
   }
 
   return (
@@ -70,7 +83,7 @@ export const ToastProvider = ({ children }: { children: ReactNode }) => {
             id={toast.id}
             message={toast.message}
             type={toast.type}
-            duration={toast.duration}
+            options={toast.options}
           />
         ))}
       </div>
@@ -89,18 +102,19 @@ export const useToast = (): ToastContextProps => {
 interface ToastProps {
   id: string;
   message: string;
-  type: ToastType
-  duration?: number
+  type: ToastType;
+  options?: ToastOptions;
 }
 
-const Toast = ({ message, type, duration = 5000 }: ToastProps) => {
+const Toast = ({ message, type, options = {}}: ToastProps) => {
   const [isVisible, setIsVisible] = useState(false);
+  const { duration = 5000 } = options;
 
-  // Just some basic styles to get you up and running
   const typeToColor = {
     'success': '#22c55e',
     'error': '#ef4444',
-    'info': '#3b82f6'
+    'info': '#3b82f6',
+    'warn': '#eab308'
   }
 
   const toastStyles: CSSProperties = {
@@ -120,7 +134,7 @@ const Toast = ({ message, type, duration = 5000 }: ToastProps) => {
 
     const slideTimer = setTimeout(() => {
       setIsVisible(false)
-    }, duration / 1.5)
+    }, duration - 500)
 
     return () => {
       clearTimeout(slideTimer)

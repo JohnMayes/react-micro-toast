@@ -1,4 +1,3 @@
-"use client"
 import { 
   createContext, 
   useContext, 
@@ -7,10 +6,12 @@ import {
   useMemo, 
   useEffect, 
   ReactNode, 
-  CSSProperties } from 'react';
+  CSSProperties 
+} from 'react';
 
 type ToastType = 'success' | 'error' | 'info' | 'warn';
 
+// Extend ToastOptions for positioning, dismissibility, custom styles, and an onDismiss callback
 interface ToastOptions {
   duration?: number;
   position?: 'top-right' | 'top-left' | 'top-center' | 'bottom-right' | 'bottom-left' | 'bottom-center';
@@ -57,6 +58,7 @@ export const ToastProvider = ({ children }: { children: ReactNode }) => {
     };
   }, [removeToast]);
 
+   // Add removeToast to context value for manual toast removal
   const contextValue = useMemo(() => ({
     success: (message: string, options?: ToastOptions) => addToast(message, 'success', options),
     error: (message: string, options?: ToastOptions) => addToast(message, 'error', options),
@@ -84,6 +86,7 @@ export const ToastProvider = ({ children }: { children: ReactNode }) => {
         );
       })}
   
+      {/* Dynamic styling system with position variants. This example uses styled-jsx: https://github.com/vercel/styled-jsx */}
       <style jsx>{`
         .toast-container {
           position: fixed;
@@ -113,7 +116,6 @@ export const ToastProvider = ({ children }: { children: ReactNode }) => {
       `}</style>
     </ToastContext.Provider>
   );
-  
 };
 
 export const useToast = (): ToastContextProps => {
@@ -124,12 +126,13 @@ export const useToast = (): ToastContextProps => {
   return context;
 };
 
+// Implement extended options in Toast component
 interface ToastProps {
   id: string,
   message: string;
   type: ToastType;
   removeToast: (id: string) => void;
-  options?: ToastOptions
+  options?: ToastOptions;
 }
 
 const Toast = ({ message, type, id, options = {}, removeToast }: ToastProps) => {
@@ -138,9 +141,11 @@ const Toast = ({ message, type, id, options = {}, removeToast }: ToastProps) => 
 
   const handleDismiss = () => {
     if (options.onDismiss) {
-      options.onDismiss()
-    }
+      // Calls optional callback when dismissed
+      options.onDismiss();
+    };
     setIsVisible(false);
+    // Allows manual removal
     removeToast(id);
   }
 
@@ -149,7 +154,7 @@ const Toast = ({ message, type, id, options = {}, removeToast }: ToastProps) => 
 
     const slideTimer = setTimeout(() => {
       setIsVisible(false);
-    }, duration - 500); // Start hiding before full duration ends
+    }, duration - 500);
 
     return () => {
       clearTimeout(slideTimer);
@@ -197,7 +202,7 @@ const Toast = ({ message, type, id, options = {}, removeToast }: ToastProps) => 
           transform: translateX(-100%);
         }
 
-        .bottom-right, .bottom-left .bottom-center {
+        .bottom-center {
           transform: translateY(100%);
         }
 
