@@ -111,9 +111,9 @@ const Toast = ({ message, type, options = {}}: ToastProps) => {
   const { duration = 5000 } = options;
 
   const typeToColor = {
-    'success': '#22c55e',
+    'success': '#17c37b',
     'error': '#ef4444',
-    'info': '#3b82f6',
+    'info': '#4a90e2',
     'warn': '#eab308'
   }
 

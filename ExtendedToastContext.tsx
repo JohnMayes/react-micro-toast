@@ -164,7 +164,7 @@ const Toast = ({ message, type, id, options = {}, removeToast }: ToastProps) => 
   return (
     <>
       <div
-        className={`toast ${type} ${position} ${isVisible ? 'visible' : ''}`}
+        className={`toast ${type} toast__${position} ${isVisible ? 'visible' : ''}`}
         style={options.style}
         role="alert"
       >
@@ -174,9 +174,9 @@ const Toast = ({ message, type, id, options = {}, removeToast }: ToastProps) => 
 
       <style jsx>{`
         .toast {
-          --success-color: #22c55e;
+          --success-color: #17c37b;
           --error-color: #ef4444;
-          --info-color: #3b82f6;
+          --info-color: #4a90e2;
           --warn-color: #eab308;
 
           position: relative;
@@ -194,19 +194,19 @@ const Toast = ({ message, type, id, options = {}, removeToast }: ToastProps) => 
         }
 
         /* Entry / Exit Animations Based on Position */
-        .top-right, .bottom-right {
+        .toast__top-right, .toast__bottom-right {
           transform: translateX(100%);
         }
 
-        .top-left, .bottom-left {
+        .toast__top-left, .toast__bottom-left {
           transform: translateX(-100%);
         }
 
-        .bottom-center {
+        .toast__bottom-center {
           transform: translateY(100%);
         }
 
-        .top-center {
+        .toast__top-center {
           transform: translateY(-100%);
         }
 
